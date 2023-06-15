@@ -6,7 +6,6 @@ set -euxo pipefail
 
 # Variable Declaration
 
-IP_ADDRESS_INTERFACE="ens3"
 KUBERNETES_VERSION="1.27.2-00"
 
 # disable swap
@@ -71,7 +70,9 @@ sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSI
 sudo apt-get update -y
 sudo apt-get install -y jq
 
-local_ip=$(ip -4 -br addr show dev "$IP_ADDRESS_INTERFACE" | awk '{split($0,a," "); split(a[3],ip,"/"); print ip[1]}')
+
+IFACE=$(ip route show to match default | perl -nle 'if ( /dev\s+(\S+)/ ) {print $1}')
+local_ip=$(ip -4 -br addr show dev "$IFACE" | awk '{split($0,a," "); split(a[3],ip,"/"); print ip[1]}')
 cat > /etc/default/kubelet << EOF
 KUBELET_EXTRA_ARGS=--node-ip=$local_ip
 EOF
