@@ -6,7 +6,8 @@ set -euxo pipefail
 
 # Variable Declaration
 
-KUBERNETES_VERSION="1.26.1-00"
+IP_ADDRESS_INTERFACE="ens3"
+KUBERNETES_VERSION="1.27.2-00"
 
 # disable swap
 sudo swapoff -a
@@ -62,7 +63,7 @@ echo "CRI runtime installed susccessfully"
 
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl
-sudo curl -fsSLo /usr/share/keyrings/kubernetes-archive-keyring.gpg https://packages.cloud.google.com/apt/doc/apt-key.gpg
+sudo curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/kubernetes-archive-keyring.gpg
 
 echo "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main" | sudo tee /etc/apt/sources.list.d/kubernetes.list
 sudo apt-get update -y
@@ -70,7 +71,7 @@ sudo apt-get install -y kubelet="$KUBERNETES_VERSION" kubectl="$KUBERNETES_VERSI
 sudo apt-get update -y
 sudo apt-get install -y jq
 
-local_ip="$(ip --json a s | jq -r '.[] | if .ifname == "eth1" then .addr_info[] | if .family == "inet" then .local else empty end else empty end')"
+local_ip=$(ip -4 -br addr show dev "$IP_ADDRESS_INTERFACE" | awk '{split($0,a," "); split(a[3],ip,"/"); print ip[1]}')
 cat > /etc/default/kubelet << EOF
 KUBELET_EXTRA_ARGS=--node-ip=$local_ip
 EOF
